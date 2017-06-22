@@ -1,2 +1,2 @@
 # administrative
-setups, demos, guides
+setups, demos, guides, hw-room management
