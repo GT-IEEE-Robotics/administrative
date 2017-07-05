@@ -42,7 +42,7 @@ void initMenu() {
   tft.print("B");
   tft.setTextColor(ST7735_WHITE);
   tft.print(" Manager");
-  tft.stroke(255,255,255);
+  tft.stroke(255, 255, 255);
   tft.line(0, 10, 160, 10);
   
   // options
@@ -70,12 +70,18 @@ void initMenu() {
   tft.line(0, 117, 160, 117);
 }
 
-void menu() {
+void menu() { // TODO make changes interrupt driven and maintain otherwise
   // clear all circles
-  // black stroke
-  // all circles
-
+  tft.stroke(0, 0, 0);
+  tft.circle(5, 25, 1);
+  tft.circle(5, 40, 1);
+  tft.circle(5, 55, 1);
+  tft.circle(5, 70, 1);
+  tft.circle(5, 85, 1);
+  tft.circle(5, 100, 1);
+  
   // menu cursor
+  tft.stroke(255, 255, 255);
   switch(select) {
     case 0:
       tft.circle(5, 25, 1);
@@ -102,16 +108,25 @@ void checkJoystick()
 {
   int joystickState = analogRead(3);
   
-  if(joystickState < 50) {
+  if(joystickState < 50) { // left
     select--;
-  } else if(joystickState < 150) {
+    delay(100);
+  } else if(joystickState < 150) { // down
+    select++;
+    delay(1000);
+  } else if (joystickState < 250) { // press
+    select++;
+    delay(1000);
+  } else if (joystickState < 500) { // right
+    select++;
+    delay(1000);
+  } else if(joystickState < 650) { // up
     select--;
-  } else if (joystickState < 250) {
-    select++;
-  } else if (joystickState < 500) {
-    select++;
-  } else if(joystickState < 650) {
-    select++;
+    delay(1000);
+  }
+  
+  if (select < 0) {
+    select = 5;
   }
   select = select % 6;
 }
