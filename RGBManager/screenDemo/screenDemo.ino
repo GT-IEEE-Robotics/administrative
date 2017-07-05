@@ -46,18 +46,15 @@ void initPrintTime() {
 }
 
 void printTime() {
-  // if (millis() / 1000) 
-  
-  tft.setCursor(0, 50);
-  tft.fillRect(0, 50, tft.width(), 14, ST7735_BLACK);
+  tft.setCursor(0, 48);
+  tft.fillRect(0, 48, tft.width(), 14, ST7735_BLACK);
   tft.print((millis() / 1000) / 3600);
 
-  tft.setCursor(0, 82);
-  tft.fillRect(0, 82, tft.width(), 14, ST7735_BLACK);
+  tft.setCursor(0, 81);
+  tft.fillRect(0, 81, tft.width(), 14, ST7735_BLACK);
   tft.print((millis() / 1000) / 60);
   
-  tft.setCursor(0, 115);
-  tft.fillRect(0, 115, tft.width(), 14, ST7735_BLACK);
+  tft.setCursor(0, 114);
+  tft.fillRect(0, 114, tft.width(), 14, ST7735_BLACK);
   tft.print(millis() / 1000);
 }
-
