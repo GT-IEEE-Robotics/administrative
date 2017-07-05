@@ -1,180 +1,90 @@
-#include <TFT.h>
-#include <SPI.h>
 #include <Adafruit_NeoPixel.h>
-
-#define TFT_CS 10
-#define TFT_RST 0
-#define TFT_DC 8
 
 #define LED_PIN 4
 #define BUTTON_PIN 9
 #define POT_PIN A0
 #define LED_COUNT 31
 
-TFT tft = TFT(TFT_CS, TFT_DC, TFT_RST);
 Adafruit_NeoPixel leds = Adafruit_NeoPixel(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
 
-// global selection variable
-int select = 0;
-
-// preview color
-int red = 0;
-int green = 0;
-int blue = 0;
+int mode = 0;
 
 void setup() {
-  Serial.begin(9600);
-  Serial.print("Program starting...");
-
-  tft.initR(INITR_BLACKTAB); // initialize a ST7735S chip, black tab
-  tft.fillScreen(ST7735_BLACK);
-  tft.setRotation(3);
-  Serial.println("Initialized screen");
-
+  // initalize the led array
   leds.begin();
-  clearLEDs();
-  Serial.println("Initialized leds");
 
-  initMenu();
+  // clear the leds
+  clearLEDs();
+
+  // initialize the button mode
+  pinMode(BUTTON_PIN, INPUT);
+
+  // initialize the serial print out
+  Serial.begin(9600);
+  Serial.println("Program Starting...");
 }
+
 
 void loop() {
-  checkJoystick(); // TODO make interrupt driven
-  menu();
-}
+  // check potentitometer reading
+  int potentiometer = analogRead(POT_PIN);
+  int buttonState = digitalRead(BUTTON_PIN);
 
-void initMenu() {
-  // title
-  tft.fillScreen(ST7735_BLACK);
-  tft.setCursor(50, 0);
-  tft.setTextColor(ST7735_RED);
-  tft.print("R");
-  tft.setTextColor(ST7735_GREEN);
-  tft.print("G");
-  tft.setTextColor(ST7735_BLUE);
-  tft.print("B");
-  tft.setTextColor(ST7735_WHITE);
-  tft.print(" Manager");
-  tft.stroke(255, 255, 255);
-  tft.line(0, 10, 160, 10);
-  
-  // options
-  tft.setCursor(10, 22);
-  tft.print("Option 1");
-  tft.setCursor(10, 37);
-  tft.print("Option 2");
-  tft.setCursor(10, 52);
-  tft.print("Option 3");
-  tft.setCursor(10, 67);
-  tft.print("Option 4");
-  tft.setCursor(10, 82);
-  tft.print("Option 5");
-  tft.setCursor(10, 97);
-  tft.print("Option 6");
+  // print outs
+  Serial.println(potentiometer);
 
-  // preview
-  tft.rect(70, 24, 80, 80);
+  // switching modes
+  if (buttonState) mode++;
+  mode = mode % 6; 
+  Serial.println(mode);
 
-  // credits
-  tft.setCursor(0, 120);
-  tft.print("v1.0");
-  tft.setCursor(115, 120);
-  tft.print("tlee753");  
-  tft.line(0, 117, 160, 117);
-}
-
-void menu() { // TODO make changes interrupt driven and maintain otherwise
-  // clear all circles
-  tft.stroke(0, 0, 0);
-  tft.circle(5, 25, 1);
-  tft.circle(5, 40, 1);
-  tft.circle(5, 55, 1);
-  tft.circle(5, 70, 1);
-  tft.circle(5, 85, 1);
-  tft.circle(5, 100, 1);
-  
-  // menu cursor
-  tft.stroke(255, 255, 255);
-  switch(select) {
+  // color control flow
+  switch (mode) {
     case 0:
-      tft.circle(5, 25, 1);
       clearLEDs();
       break;
     case 1:
-      tft.circle(5, 40, 1);
-      displayColor(255, 255, 255);
+      brightLEDs(potentiometer, 1024);
       break;
     case 2:
-      tft.circle(5, 55, 1);
-      displayColor(0, 255, 0);
+      spectrumLEDs(potentiometer, 1024);
       break;
     case 3:
-      tft.circle(5, 70, 1);
       randomLEDs();
       break;
     case 4:
-      tft.circle(5, 85, 1);
       for (int i=0; i<LED_COUNT*10; i++) {
         rainbowLEDs(i);
         delay(100);
       }
       break;
     case 5:
-      tft.circle(5, 100, 1);
-      cycloneLEDs(255, 255, 255, 10);
-      break;
+      cycloneLEDs(127, 127, 255, 10);
+    default:
+      displayColor(0, 255, 0);
   }
 
-  // preview
-  tft.fill(red, green, blue);
-  tft.rect(70, 24, 80, 80);
+  // loop corrections
+  delay(250);
 }
 
-void checkJoystick()
-{
-  int joystickState = analogRead(3);
-  
-  if(joystickState < 50) { // left
-    select--;
-    delay(100);
-  } else if(joystickState < 150) { // down
-    select++;
-    delay(1000);
-  } else if (joystickState < 250) { // press
-    select++;
-    delay(1000);
-  } else if (joystickState < 500) { // right
-    select++;
-    delay(1000);
-  } else if(joystickState < 650) { // up
-    select--;
-    delay(1000);
-  }
-  
-  if (select < 0) {
-    select = 5;
-  }
-  select = select % 6;
-}
 
 void displayColor(int r, int g, int b) {
-  red = r;
-  green = g;
-  blue = b;
   for (int i=0; i < LED_COUNT; i++) {
     leds.setPixelColor(i, r, g, b);
   }
   leds.show();
 }
 
+
 void clearLEDs() {
-  red = green = blue = 0;
   for (int i=0; i<LED_COUNT; i++) {
     leds.setPixelColor(i, 0, 0, 0);
   }
   leds.show();
   Serial.println("Clearing");
 }
+
 
 void brightLEDs(int input, int maxRange) {
   input = input/(maxRange/256);
@@ -184,21 +94,17 @@ void brightLEDs(int input, int maxRange) {
   leds.show();
 }
 
+
 void randomLEDs() {
   for (int i=0; i<LED_COUNT; i++) {
-    int r = random(0, 256);
-    int g = random(0, 256);
-    int b = random(0, 256);
-    leds.setPixelColor(i, r, g, b);
-    if (i == 0) {
-      red = r;
-      green = g;
-      blue = b;
-    }
+    int red = random(0, 256);
+    int green = random(0, 256);
+    int blue = random(0, 256);
+    leds.setPixelColor(i, red, green, blue);
   }
   leds.show();
-  delay(50);
 }
+
 
 void spectrumLEDs(int input, int maxRange) {
   // local variables
@@ -234,6 +140,7 @@ void spectrumLEDs(int input, int maxRange) {
   leds.show();
 }
 
+
 void rainbowLEDs(byte startPosition) 
 {
   // scaling for the rainbow
@@ -242,14 +149,9 @@ void rainbowLEDs(byte startPosition)
   // Next we setup each pixel with the right color
   for (int i=0; i<LED_COUNT; i++) {
     // It'll return a color between red->orange->green->...->violet for 0-191.
-    uint32_t color = rainbowOrder((rainbowScale * (i + startPosition)) % 192);
-    leds.setPixelColor(i, color);
-    if (i == 0) {
-//      red = (int) color % 16;
-//      green = (int) color % 8;
-//      blue = (int) color %
-    }
+    leds.setPixelColor(i, rainbowOrder((rainbowScale * (i + startPosition)) % 192));
   }
+
   leds.show();
 }
 
@@ -289,11 +191,9 @@ uint32_t rainbowOrder(byte position)
   }
 }
 
-void cycloneLEDs(int r, int g, int b, byte wait)
+
+void cycloneLEDs(int red, int green, int blue, byte wait)
 {
-  red = r;
-  green = g;
-  blue = b;
   // weight determines how much lighter the outer "eye" colors are
   const byte weight = 4;
 
@@ -301,15 +201,15 @@ void cycloneLEDs(int r, int g, int b, byte wait)
   for (int i=0; i<=LED_COUNT-1; i++)
   {
     clearLEDs();
-    leds.setPixelColor(i, r, g, b);  // Set the bright middle eye
+    leds.setPixelColor(i, red, green, blue);  // Set the bright middle eye
     
     // Now set two eyes to each side to get progressively dimmer
     for (int j=1; j<3; j++)
     {
       if (i-j >= 0)
-        leds.setPixelColor(i-j, r/(weight*j), g/(weight*j), b/(weight*j));
+        leds.setPixelColor(i-j, red/(weight*j), green/(weight*j), blue/(weight*j));
       if (i-j <= LED_COUNT)
-        leds.setPixelColor(i+j, r/(weight*j), g/(weight*j), b/(weight*j));
+        leds.setPixelColor(i+j, red/(weight*j), green/(weight*j), blue/(weight*j));
     }
     leds.show();  // Turn the LEDs on
     delay(wait);  // Delay for visibility
@@ -319,13 +219,13 @@ void cycloneLEDs(int r, int g, int b, byte wait)
   for (int i=LED_COUNT-2; i>=1; i--)
   {
     clearLEDs();
-    leds.setPixelColor(i, r, g, b);
+    leds.setPixelColor(i, red, green, blue);
     for (int j=1; j<3; j++)
     {
       if (i-j >= 0)
-        leds.setPixelColor(i-j, r/(weight*j), g/(weight*j), b/(weight*j));
+        leds.setPixelColor(i-j, red/(weight*j), green/(weight*j), blue/(weight*j));
       if (i-j <= LED_COUNT)
-        leds.setPixelColor(i+j, r/(weight*j), g/(weight*j), b/(weight*j));
+        leds.setPixelColor(i+j, red/(weight*j), green/(weight*j), blue/(weight*j));
       }
     
     leds.show();
